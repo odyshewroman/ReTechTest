@@ -22,7 +22,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let navigationController: UINavigationController = UINavigationController()
         self.window?.rootViewController = navigationController
     
-        let viewController = ViewController()
+        let viewController = ViewController(ProductsRepository(), ImagePickerManager())
         
         navigationController.pushViewController(viewController, animated: false)
         
