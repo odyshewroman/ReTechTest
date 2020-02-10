@@ -32,19 +32,13 @@ class ProductCell: UITableViewCell {
     
     var imagePickerManager: ImagePickerManager?
     
-    var product: Product { didSet { updatetView() } }
-    
     override var isSelected: Bool {
-        didSet { self.view.backgroundColor = isSelected ? UIColor(red: 0.7, green: 0.7, blue: 0.7, alpha: 1) : .white }
+        didSet { self.view.backgroundColor = isSelected ? UIColor(red: 0.85, green: 0.85, blue: 0.85, alpha: 1) : .white }
     }
     
     weak var delegate: CellDelegate?
     
-    private var hasName: Bool { return product.name != nil }
-    
-    init(product: Product) {
-        self.product = product
-        
+    init() {
         super.init(style: .default, reuseIdentifier: nil)
         
         backgroundColor = .clear
@@ -52,21 +46,11 @@ class ProductCell: UITableViewCell {
         
         contentView.addSubview(view)
         
-        addPhotosPanel.addSubview(photosLabel)
-        addPhotosPanel.addSubview(switchElement)
-        
+        addPhotosPanel.addSubviews(photosLabel, switchElement)
         photosScroll.addSubview(stackView)
-        photosPanel.addSubview(plusPhotoButton)
-        photosPanel.addSubview(photosScroll)
+        photosPanel.addSubviews(plusPhotoButton, photosScroll)
         
-        counterView.delegate = self
-        
-        view.addSubview(nameTextField)
-        view.addSubview(name)
-        view.addSubview(closeButton)
-        view.addSubview(counterView)
-        view.addSubview(addPhotosPanel)
-        view.addSubview(photosPanel)
+        view.addSubviews(nameTextField, name, closeButton, counterView, addPhotosPanel, photosPanel)
         
         photosScroll.isScrollEnabled = true
         photosScroll.isPagingEnabled = true
@@ -85,7 +69,6 @@ class ProductCell: UITableViewCell {
         
         nameTextField.backgroundColor = UIColor(red: 0, green: 0, blue: 0, alpha: 0.1)
         nameTextField.placeholder = "Enter name of the product"
-        
         nameTextField.delegate = self
         nameTextField.setLeftPaddingPoints(5)
         
@@ -109,8 +92,6 @@ class ProductCell: UITableViewCell {
         photosPanel.isHidden = true
         
         makeConstraints()
-        
-        updatetView()
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -119,57 +100,28 @@ class ProductCell: UITableViewCell {
     
     @objc private func addPhotoTap() {
         imagePickerManager?.pickImage() { [unowned self] image in
-            
-//            let imageView = UIImageView(image:  self.resizeImage(image: image, targetSize: CGSize(width: 100, height: 100)))
-//            imageView.frame = CGRect(x: 0, y: 0, width: 100, height: 100)
-//            imageView.contentMode = .scaleAspectFit
-            
-            guard let data = image.jpegData(compressionQuality: 1) else { return }
-            
-            self.product.photos.append(data)
+            self.addImageToStack(image)
         }
     }
     
     private func addImageToStack(_ image: UIImage) {
-        let imageView = UIImageView(frame: CGRect(origin: .zero, size: CGSize(width: 100, height: 100)))
-        imageView.image = image
-        imageView.clipsToBounds = true
-        imageView.snp.makeConstraints { make in
+        let productImageView = ProductImageView(image)
+        productImageView.deleteProductImageDelegate = self
+        productImageView.snp.makeConstraints { make in
             make.size.equalTo(100)
         }
         
-        self.stackView.addArrangedSubview(imageView)
+        self.stackView.addArrangedSubview(productImageView)
         self.stackView.sizeToFit()
+        remakeConstraints()
     }
     
     @objc private func clearName() {
-        product.name = nil
-    }
-    
-    private func resizeImage(image: UIImage, targetSize: CGSize) -> UIImage {
-        let size = image.size
-
-        let widthRatio  = targetSize.width  / size.width
-        let heightRatio = targetSize.height / size.height
-
-        // Figure out what our orientation is, and use that to form the rectangle
-        var newSize: CGSize
-        if(widthRatio > heightRatio) {
-            newSize = CGSize(width: size.width * heightRatio, height: size.height * heightRatio)
-        } else {
-            newSize = CGSize(width: size.width * widthRatio,  height: size.height * widthRatio)
-        }
-
-        // This is the rect that we've calculated out and this is what is actually used below
-        let rect = CGRect(x: 0, y: 0, width: newSize.width, height: newSize.height)
-
-        // Actually do the resizing to the rect using the ImageContext stuff
-        UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
-        image.draw(in: rect)
-        let newImage = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-
-        return newImage!
+        name.text = nil
+        name.isHidden = true
+        nameTextField.isHidden = false
+        
+        closeButton.isHidden = name.isHidden
     }
     
     @objc private func switchChange() {
@@ -254,7 +206,6 @@ class ProductCell: UITableViewCell {
         photosLabel.snp.makeConstraints { make in
             make.left.equalToSuperview().offset(sideOffset)
             make.centerY.equalToSuperview()
-           // make.height.equalToSuperview()
             make.right.equalTo(switchElement.snp.left).inset(5)
         }
         
@@ -284,7 +235,6 @@ class ProductCell: UITableViewCell {
         photosScroll.snp.makeConstraints { make in
             make.top.right.equalToSuperview().inset(sideOffset)
             make.bottom.equalToSuperview().inset(sideOffset)
-            // sideOffset
             make.left.equalTo(plusPhotoButton.snp.right).offset(10)
         }
         
@@ -293,7 +243,24 @@ class ProductCell: UITableViewCell {
         }
     }
     
-    private func updatetView() {
+    func getProduct() -> Product {
+        let name: String?
+        
+        name = self.name.isHidden ? nil : self.name.text
+        
+        var photos = [Data]()
+        
+        stackView.arrangedSubviews.forEach {
+            guard let productImageView = $0 as? ProductImageView else { return }
+            guard let data = productImageView.image?.jpegData(compressionQuality: 1) else { return }
+            
+            photos.append(data)
+        }
+        
+        return Product(name: name, count: counterView.count, photos: photos)
+    }
+    
+    func setProduct(_ product: Product) {
         counterView.count = product.count
         
         if let productName = product.name {
@@ -314,17 +281,11 @@ class ProductCell: UITableViewCell {
             return
         }
         
-        if product.photos.count != stackView.arrangedSubviews.count {
-            product.photos.forEach { data in
-                if let image = UIImage(data: data) {
-                    if stackView.arrangedSubviews.contains(where: { view in
-                        guard let uiImageView = view as? UIImageView else { return false }
-                        return image.isEqual(uiImageView.image)
-                       // return uiImageView.image?.jpegData(compressionQuality: 1) == data
-                    }) { return }
-                    
-                    addImageToStack(image)
-                }
+        stackView.arrangedSubviews.forEach { $0.removeFromSuperview()}
+        
+        product.photos.forEach { data in
+            if let image = UIImage(data: data) {
+                addImageToStack(image)
             }
         }
         
@@ -348,13 +309,16 @@ extension ProductCell: UITextFieldDelegate {
     func textFieldDidEndEditing(_ textField: UITextField) {
         guard let text = textField.text, !text.isEmpty else { return }
         
-        product.name = text
-        updatetView()
+        name.text = text
+        name.isHidden = false
+        nameTextField.isHidden = true
+        
+        closeButton.isHidden = name.isHidden
     }
 }
 
-extension ProductCell: CountChangeDelegate {
-    func countChange(_ count: UInt) {
-        product.count = count
+extension ProductCell: DeleteProductImageDelegate {
+    func deleteProductImage(_ productImage: ProductImageView) {
+        stackView.removeArrangedSubview(productImage)
     }
 }

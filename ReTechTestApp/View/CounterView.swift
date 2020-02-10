@@ -15,7 +15,6 @@ class CounterView: UIView {
     private let minusButton = UIButton()
     private let countValue = UILabel()
     
-    weak var delegate: CountChangeDelegate?
     private let buttonsSize: CGFloat = 45
     
     var count: UInt = 0 { didSet { invalidateCounter() }}
@@ -71,7 +70,6 @@ class CounterView: UIView {
         } else {
             count -= 1
         }
-        delegate?.countChange(count)
     }
     
     private func invalidateCounter() {
@@ -104,8 +102,4 @@ class CounterView: UIView {
             make.top.equalTo(countLabel.snp.bottom)
         }
     }
-}
-
-protocol CountChangeDelegate: class {
-    func countChange(_ count: UInt)
 }

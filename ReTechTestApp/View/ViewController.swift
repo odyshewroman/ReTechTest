@@ -12,11 +12,11 @@ import SnapKit
 class ViewController: UIViewController {
 
     private let repository: ProductsRepository
-    
+
     private let headerLabel = UILabel()
+    private let noProductsLabel = UILabel()
     private let saveButton = UIButton()
     private let tableView: ProductsTable
-    
     private let addProductLabel = UILabel()
     private let addButton = UIButton()
     
@@ -42,16 +42,12 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        // Do any additional setup after loading the view.
-        navigationController?.navigationBar.barTintColor = backgroundColor
-        
-       // self.navigationController?.navigationBar.setBackgroundImage(UIImage(), for: .default)
-        self.navigationController?.navigationBar.shadowImage = UIImage()
-        
-        navigationController?.navigationBar.backgroundColor = backgroundColor
-        
         view.backgroundColor = backgroundColor
         
+        navigationController?.navigationBar.barTintColor = backgroundColor
+        navigationController?.navigationBar.backgroundColor = backgroundColor
+       // self.navigationController?.navigationBar.setBackgroundImage(UIImage(), for: .default)
+        self.navigationController?.navigationBar.shadowImage = UIImage()
         navigationController?.navigationBar.titleTextAttributes = [.foregroundColor: UIColor.white]
         
         tableView.backgroundColor = .clear
@@ -59,7 +55,19 @@ class ViewController: UIViewController {
         addProductLabel.textAlignment = .center
         addProductLabel.text = "Add product"
         addProductLabel.textColor = .white
-        addButton.backgroundColor = .red
+        
+        noProductsLabel.textAlignment = .center
+        noProductsLabel.text = "No products"
+        noProductsLabel.textColor = .white
+        
+        addButton.layer.cornerRadius = 22.5
+        addButton.layer.borderColor = UIColor.white.cgColor
+        addButton.layer.borderWidth = 1
+        
+        addButton.setTitle("+", for: .normal)
+        addButton.setTitleColor(.white, for: .normal)
+        addButton.titleLabel?.font = UIFont.systemFont(ofSize: 14, weight: .bold)
+        addButton.backgroundColor = backgroundColor
         
         tableView.separatorColor = .clear
         
@@ -76,9 +84,9 @@ class ViewController: UIViewController {
     
         tableView.allowsSelection = true
         
-        view.addSubview(tableView)
-        view.addSubview(addProductLabel)
-        view.addSubview(addButton)
+        view.addSubviews(tableView, addProductLabel, addButton, noProductsLabel)
+        
+        noProductsLabel.isHidden = !tableView.isEmpty
         
         let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
         tap.cancelsTouchesInView = false
@@ -95,15 +103,14 @@ class ViewController: UIViewController {
     
     @objc private func deleteProduct() {
         tableView.deleteSelectedProduct()
+        noProductsLabel.isHidden = !tableView.isEmpty
     }
     
     @objc private func keyboardWillHide(_ notification: Notification) {
         UIView.beginAnimations(nil, context: nil)
         UIView.setAnimationCurve(.easeIn)
         UIView.setAnimationDuration(0.3)
-     //   self.tableView.transform = .identity
        
-        
         tableView.snp.remakeConstraints { make in
             if #available(iOS 11, *) {
                 make.top.equalTo(view.safeAreaLayoutGuide.snp.topMargin)
@@ -126,15 +133,6 @@ class ViewController: UIViewController {
         
         guard let userInfo = (notification as NSNotification).userInfo else { return }
         guard let keyboardFrame = (userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue else { return }
-//
-//        let offset: CGFloat = 10
-//        let bottomElement = self.tableView.frame.origin.y + self.tableView.frame.height
-//        let keyboardTop = self.view.frame.height - keyboardFrame.height
-//        let verticalShift = keyboardTop - bottomElement - offset
-//
-//        if verticalShift < 0 {
-//            self.view.transform = CGAffineTransform(translationX: 0, y: verticalShift)
-//        }
         
         tableView.snp.remakeConstraints { make in
             if #available(iOS 11, *) {
@@ -167,7 +165,10 @@ class ViewController: UIViewController {
             
             make.left.right.centerX.equalToSuperview()
             make.bottom.equalTo(addProductLabel.snp.top).offset(-15)
-          //  make.bottom.lessThanOrEqualTo(addProductLabel.snp.top).inset(15)
+        }
+        
+        noProductsLabel.snp.makeConstraints { make in
+            make.center.width.equalToSuperview()
         }
         
         addProductLabel.snp.makeConstraints { make in

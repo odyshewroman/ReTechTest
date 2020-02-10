@@ -13,14 +13,16 @@ class ProductsTable: UITableView {
     private var selectedCell: ProductCell? = nil
     private let imagePickerManager: ImagePickerManager
     
-    var products: [Product] { return cells.map { $0.product } }
+    var products: [Product] { return cells.map { $0.getProduct() } }
+    var isEmpty: Bool { return cells.count == 0 }
     
     init(_ products: [Product], _ imagePickerManager: ImagePickerManager) {
         self.imagePickerManager = imagePickerManager
         super.init(frame: .zero, style: .plain)
         
         products.forEach {
-            let cell = ProductCell(product: $0)
+            let cell = ProductCell()
+            cell.setProduct($0)
             cell.delegate = self
             cell.imagePickerManager = imagePickerManager
             cells.append(cell)
@@ -42,7 +44,8 @@ class ProductsTable: UITableView {
     
     func addNewProduct() {
         let p = Product(name: "Hello", count: 10, photos: [])
-        let cell = ProductCell(product: p)
+        let cell = ProductCell()
+        cell.setProduct(p)
         cell.delegate = self
         cell.imagePickerManager = imagePickerManager
         cells.insert(cell, at: 0)
