@@ -17,8 +17,8 @@ class ProductCell: UITableViewCell {
     
     private let nameTextField = UITextField()
     private let name = UILabel()
-    
     private let closeButton = UIButton(frame: CGRect(x: 0, y: 0, width: 24, height: 24))
+    
     private let counterView = CounterView()
     
     private let addPhotosPanel = UIView()
@@ -98,72 +98,7 @@ class ProductCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
-    @objc private func addPhotoTap() {
-        imagePickerManager?.pickImage() { [unowned self] image in
-            self.addImageToStack(image)
-        }
-    }
-    
-    private func addImageToStack(_ image: UIImage) {
-        let productImageView = ProductImageView(image)
-        productImageView.deleteProductImageDelegate = self
-        productImageView.snp.makeConstraints { make in
-            make.size.equalTo(100)
-        }
-        
-        self.stackView.addArrangedSubview(productImageView)
-        self.stackView.sizeToFit()
-        remakeConstraints()
-    }
-    
-    @objc private func clearName() {
-        name.text = nil
-        name.isHidden = true
-        nameTextField.isHidden = false
-        
-        closeButton.isHidden = name.isHidden
-    }
-    
-    @objc private func switchChange() {
-        updatePhotosPanel()
-    }
-    
-    private func updatePhotosPanel() {
-        photosPanel.isHidden = !switchElement.isOn
-        photosPanel.isOpaque = switchElement.isOn
-        
-        remakeConstraints()
-        
-        delegate?.contentDidChange(cell: self)
-    }
-    
-    private func remakeConstraints() {
-        addPhotosPanel.snp.remakeConstraints { make in
-            make.top.equalTo(counterView.snp.bottom).offset(sideOffset)
-            make.left.right.equalToSuperview()
-            make.height.equalTo(35)
-            
-            if switchElement.isOn {
-                make.bottom.equalTo(photosPanel.snp.top)
-            } else {
-                make.bottom.equalToSuperview()
-            }
-        }
-        
-        photosPanel.snp.remakeConstraints { make in
-            make.left.right.equalToSuperview().inset(sideOffset)
-            make.centerX.bottom.equalToSuperview()
-            
-            if stackView.arrangedSubviews.count == 0 {
-                make.height.equalTo(35)
-            } else {
-                make.height.equalTo(100 + 2 * sideOffset)
-            }
-        }
-    }
-    
     private func makeConstraints() {
-
         view.snp.makeConstraints { make in
             make.top.left.right.equalToSuperview().inset(10)
             make.bottom.equalToSuperview().inset(10).priority(999)
@@ -243,6 +178,75 @@ class ProductCell: UITableViewCell {
         }
     }
     
+    @objc private func addPhotoTap() {
+        imagePickerManager?.pickImage() { [unowned self] image in
+            self.addImageToStack(image, true)
+        }
+    }
+    
+    private func addImageToStack(_ image: UIImage, _ load: Bool = false) {
+        let productImageView = ProductImageView(load ? nil : image)
+    
+        productImageView.deleteProductImageDelegate = self
+        productImageView.snp.makeConstraints { make in
+            make.size.equalTo(100)
+        }
+        
+        self.stackView.addArrangedSubview(productImageView)
+        self.stackView.sizeToFit()
+        remakeConstraints()
+        
+        if load {
+            productImageView.loadImage(image)
+        }
+    }
+    
+    @objc private func clearName() {
+        name.text = nil
+        name.isHidden = true
+        nameTextField.isHidden = false
+        
+        closeButton.isHidden = name.isHidden
+    }
+    
+    @objc private func switchChange() {
+        updatePhotosPanel()
+    }
+    
+    private func updatePhotosPanel() {
+        photosPanel.isHidden = !switchElement.isOn
+        photosPanel.isOpaque = switchElement.isOn
+        
+        remakeConstraints()
+        
+        delegate?.contentDidChange(cell: self)
+    }
+    
+    private func remakeConstraints() {
+        addPhotosPanel.snp.remakeConstraints { make in
+            make.top.equalTo(counterView.snp.bottom).offset(sideOffset)
+            make.left.right.equalToSuperview()
+            make.height.equalTo(35)
+            
+            if switchElement.isOn {
+                make.bottom.equalTo(photosPanel.snp.top)
+            } else {
+                make.bottom.equalToSuperview()
+            }
+        }
+        
+        photosPanel.snp.remakeConstraints { make in
+            make.left.right.equalToSuperview().inset(sideOffset)
+            make.centerX.bottom.equalToSuperview()
+            
+            if stackView.arrangedSubviews.count == 0 {
+                make.height.equalTo(35)
+            } else {
+                make.height.equalTo(100 + 2 * sideOffset)
+            }
+        }
+    }
+    
     func getProduct() -> Product {
         let name: String?
         
@@ -291,13 +295,7 @@ class ProductCell: UITableViewCell {
         
         switchElement.setOn(true, animated: false)
         updatePhotosPanel()
-        
-        setNeedsLayout()
     }
-}
-
-extension ProductCell: UINavigationControllerDelegate, UIImagePickerControllerDelegate {
-    
 }
 
 extension ProductCell: UITextFieldDelegate {
@@ -312,7 +310,6 @@ extension ProductCell: UITextFieldDelegate {
         name.text = text
         name.isHidden = false
         nameTextField.isHidden = true
-        
         closeButton.isHidden = name.isHidden
     }
 }

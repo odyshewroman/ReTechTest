@@ -21,7 +21,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         window = UIWindow(windowScene: windowScene)
         
-        let viewController = ViewController(ProductsRepository(), ImagePickerManager())
+        let viewController = ViewController(Presenter(repository: ProductsRepository(), imagePickerManager: ImagePickerManager()))
         window?.rootViewController = viewController
         window?.makeKeyAndVisible()
         window?.windowScene = windowScene

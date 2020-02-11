@@ -10,8 +10,7 @@ import UIKit
 import SnapKit
 
 class ViewController: UIViewController {
-
-    private let repository: ProductsRepository
+    private let presenter: Presenter
 
     private let headerLabel = UILabel()
     private let noProductsLabel = UILabel()
@@ -22,17 +21,16 @@ class ViewController: UIViewController {
     
     private let backgroundColor: UIColor = UIColor(red: 106/255, green: 136/255, blue: 244/255, alpha: 1)
     
-    init(_ repository: ProductsRepository, _ imagePickerManager: ImagePickerManager) {
-        tableView = ProductsTable(repository.get() ?? [], imagePickerManager)
-        self.repository = repository
+    init(_ presenter: Presenter) {
+        self.presenter = presenter
+        tableView = ProductsTable(presenter.products ?? [], presenter.imagePickerManager)
         
         super.init(nibName: nil, bundle: nil)
         
-        imagePickerManager.viewController = self
+        presenter.imagePickerManager.viewController = self
         
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow(_:)), name: UIResponder.keyboardWillShowNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide(_:)), name: UIResponder.keyboardWillHideNotification, object: nil)
-        
     }
     
     required init?(coder: NSCoder) {
@@ -42,15 +40,16 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        view.backgroundColor = backgroundColor
+        view.backgroundColor = backgroundColor  
         
         navigationController?.navigationBar.barTintColor = backgroundColor
         navigationController?.navigationBar.backgroundColor = backgroundColor
-       // self.navigationController?.navigationBar.setBackgroundImage(UIImage(), for: .default)
         self.navigationController?.navigationBar.shadowImage = UIImage()
         navigationController?.navigationBar.titleTextAttributes = [.foregroundColor: UIColor.white]
         
         tableView.backgroundColor = .clear
+        tableView.separatorColor = .clear
+        tableView.allowsSelection = true
         
         addProductLabel.textAlignment = .center
         addProductLabel.text = "Add product"
@@ -59,6 +58,7 @@ class ViewController: UIViewController {
         noProductsLabel.textAlignment = .center
         noProductsLabel.text = "No products"
         noProductsLabel.textColor = .white
+        noProductsLabel.isHidden = !tableView.isEmpty
         
         addButton.layer.cornerRadius = 22.5
         addButton.layer.borderColor = UIColor.white.cgColor
@@ -68,8 +68,7 @@ class ViewController: UIViewController {
         addButton.setTitleColor(.white, for: .normal)
         addButton.titleLabel?.font = UIFont.systemFont(ofSize: 14, weight: .bold)
         addButton.backgroundColor = backgroundColor
-        
-        tableView.separatorColor = .clear
+        addButton.addTarget(self, action: #selector(addProduct), for: .touchUpInside)
         
         let saveBarButtonItem = UIBarButtonItem(title: "Save", style: .done, target: self, action: #selector(save))
         saveBarButtonItem.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .normal)
@@ -81,78 +80,14 @@ class ViewController: UIViewController {
         self.navigationItem.leftBarButtonItem = deleteBarButtonItem
         
         self.navigationItem.title = "Products audit"
-    
-        tableView.allowsSelection = true
         
-        view.addSubviews(tableView, addProductLabel, addButton, noProductsLabel)
-        
-        noProductsLabel.isHidden = !tableView.isEmpty
+        view.addSubviews(noProductsLabel, tableView, addProductLabel, addButton)
         
         let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
         tap.cancelsTouchesInView = false
         view.addGestureRecognizer(tap)
         
         makeConstraints()
-        
-        addButton.addTarget(self, action: #selector(addProduct), for: .touchUpInside)
-    }
-    
-    @objc private func dismissKeyboard() {
-        view.endEditing(true)
-    }
-    
-    @objc private func deleteProduct() {
-        tableView.deleteSelectedProduct()
-        noProductsLabel.isHidden = !tableView.isEmpty
-    }
-    
-    @objc private func keyboardWillHide(_ notification: Notification) {
-        UIView.beginAnimations(nil, context: nil)
-        UIView.setAnimationCurve(.easeIn)
-        UIView.setAnimationDuration(0.3)
-       
-        tableView.snp.remakeConstraints { make in
-            if #available(iOS 11, *) {
-                make.top.equalTo(view.safeAreaLayoutGuide.snp.topMargin)
-            } else {
-                make.top.equalToSuperview()
-            }
-            
-            make.left.right.centerX.equalToSuperview()
-            make.bottom.equalTo(addProductLabel.snp.top).offset(-15)
-        }
-        
-        
-        UIView.commitAnimations()
-    }
-    
-    @objc private func keyboardWillShow(_ notification: Notification) {
-        UIView.beginAnimations(nil, context: nil)
-        UIView.setAnimationCurve(.easeIn)
-        UIView.setAnimationDuration(0.3)
-        
-        guard let userInfo = (notification as NSNotification).userInfo else { return }
-        guard let keyboardFrame = (userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue else { return }
-        
-        tableView.snp.remakeConstraints { make in
-            if #available(iOS 11, *) {
-                make.top.equalTo(view.safeAreaLayoutGuide.snp.topMargin)
-            } else {
-                make.top.equalToSuperview()
-            }
-            
-            make.left.right.centerX.equalToSuperview()
-            make.bottom.equalTo(addProductLabel.snp.top).offset(-keyboardFrame.height / 2)
-        }
-        UIView.commitAnimations()
-    }
-    
-    @objc private func save() {
-        repository.save(tableView.products)
-    }
-    
-    @objc private func addProduct() {
-        tableView.addNewProduct()
     }
     
     private func makeConstraints() {
@@ -182,5 +117,63 @@ class ViewController: UIViewController {
             make.top.equalTo(addProductLabel.snp.bottom).offset(5)
             make.bottom.equalToSuperview().inset(20)
         }
+    }
+    
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
+    }
+    
+    @objc private func deleteProduct() {
+        tableView.deleteSelectedProduct()
+        noProductsLabel.isHidden = !tableView.isEmpty
+    }
+    
+    @objc private func save() {
+        presenter.saveProducts(tableView.products)
+    }
+    
+    @objc private func addProduct() {
+        tableView.addNewProduct()
+        noProductsLabel.isHidden = !tableView.isEmpty
+    }
+    
+    @objc private func keyboardWillHide(_ notification: Notification) {
+        UIView.beginAnimations(nil, context: nil)
+        UIView.setAnimationCurve(.easeIn)
+        UIView.setAnimationDuration(0.3)
+       
+        tableView.snp.remakeConstraints { make in
+            if #available(iOS 11, *) {
+                make.top.equalTo(view.safeAreaLayoutGuide.snp.topMargin)
+            } else {
+                make.top.equalToSuperview()
+            }
+            
+            make.left.right.centerX.equalToSuperview()
+            make.bottom.equalTo(addProductLabel.snp.top).offset(-15)
+        }
+        
+        UIView.commitAnimations()
+    }
+    
+    @objc private func keyboardWillShow(_ notification: Notification) {
+        UIView.beginAnimations(nil, context: nil)
+        UIView.setAnimationCurve(.easeIn)
+        UIView.setAnimationDuration(0.3)
+        
+        guard let userInfo = (notification as NSNotification).userInfo else { return }
+        guard let keyboardFrame = (userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue else { return }
+        
+        tableView.snp.remakeConstraints { make in
+            if #available(iOS 11, *) {
+                make.top.equalTo(view.safeAreaLayoutGuide.snp.topMargin)
+            } else {
+                make.top.equalToSuperview()
+            }
+            
+            make.left.right.centerX.equalToSuperview()
+            make.bottom.equalTo(addProductLabel.snp.top).offset(-keyboardFrame.height / 2)
+        }
+        UIView.commitAnimations()
     }
 }

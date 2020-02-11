@@ -62,9 +62,6 @@ class ImagePickerManager: NSObject {
         picker.sourceType = .photoLibrary
         self.viewController?.present(picker, animated: true, completion: nil)
     }
-
-//    @objc func imagePickerController(_ picker: UIImagePickerController, pickedImage: UIImage?) {
-//    }
 }
 
 extension ImagePickerManager: UIImagePickerControllerDelegate, UINavigationControllerDelegate {

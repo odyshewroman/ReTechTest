@@ -23,10 +23,7 @@ class CounterView: UIView {
         self.count = count
         super.init(frame: .zero)
         countLabel.textAlignment = .center
-        self.addSubview(countLabel)
-        self.addSubview(plusButton)
-        self.addSubview(minusButton)
-        self.addSubview(countValue)
+        self.addSubviews(countLabel, plusButton, minusButton, countValue)
         
        countValue.textAlignment = .center
         

@@ -21,15 +21,3 @@ extension UITextField {
         self.leftViewMode = .always
     }
 }
-
-extension UIImage {
-    func isEqual(_ image: UIImage) -> Bool {
-        guard let data = self.pngData() else {
-            return false
-        }
-        
-        guard let data2 = image.pngData() else { return false }
-        
-        return data2.hashValue == data.hashValue
-    }
-}

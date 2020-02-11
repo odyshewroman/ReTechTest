@@ -43,9 +43,8 @@ class ProductsTable: UITableView {
     }
     
     func addNewProduct() {
-        let p = Product(name: "Hello", count: 10, photos: [])
         let cell = ProductCell()
-        cell.setProduct(p)
+        cell.setProduct(Product(name: nil, count: 0, photos: []))
         cell.delegate = self
         cell.imagePickerManager = imagePickerManager
         cells.insert(cell, at: 0)
@@ -54,6 +53,7 @@ class ProductsTable: UITableView {
         insertRows(at: [IndexPath(row: 0, section: 0)], with: .fade)
         endUpdates()
         self.invalidateIntrinsicContentSize()
+        self.scrollToRow(at: IndexPath(row: 0, section: 0), at: .top, animated: true)
     }
     
     func deleteSelectedProduct() {
@@ -96,7 +96,6 @@ extension ProductsTable: UITableViewDataSource, UITableViewDelegate {
             self.delegate?.tableView?(self, willDeselectRowAt: indexPath)
             self.deselectRow(at: indexPath, animated: false)
             self.delegate?.tableView?(self, didDeselectRowAt: indexPath)
-            //cells[indexPath.row].isSelected = false
             return nil
         }
         
