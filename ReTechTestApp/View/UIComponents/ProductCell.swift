@@ -21,7 +21,7 @@ class ProductCell: UITableViewCell {
     
     private let counterView = CounterView()
     
-    private let addPhotosPanel = UIView()
+    private let addPhotosPanel = RoundCornersView([UIRectCorner.bottomLeft, UIRectCorner.bottomRight], 10)
     private let photosLabel = UILabel()
     private let switchElement = UISwitch()
     
@@ -72,12 +72,11 @@ class ProductCell: UITableViewCell {
         nameTextField.delegate = self
         nameTextField.setLeftPaddingPoints(5)
         
-        view.clipsToBounds = true
         view.layer.cornerRadius = 10
-        view.layer.shadowColor = UIColor(red: 0, green: 0, blue: 0, alpha: 0.8).cgColor
+        view.layer.shadowColor = UIColor(red: 0, green: 0, blue: 0, alpha: 0.4).cgColor
         view.backgroundColor = .white
         view.layer.shadowOffset = CGSize(width: 6, height: 6)
-        view.layer.shadowRadius = 10
+        view.layer.shadowRadius = 8
         view.layer.shadowOpacity = 1
         
         photosLabel.text = "Attach photos"
@@ -214,6 +213,14 @@ class ProductCell: UITableViewCell {
     }
     
     private func updatePhotosPanel() {
+        if switchElement.isOn {
+            addPhotosPanel.roundedCorners = []
+        } else {
+            addPhotosPanel.roundedCorners = [.bottomLeft, .bottomRight]
+        }
+
+        addPhotosPanel.setNeedsDisplay()
+        
         photosPanel.isHidden = !switchElement.isOn
         photosPanel.isOpaque = switchElement.isOn
         
